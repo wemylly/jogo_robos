@@ -162,7 +162,53 @@ class RoboCiclico(Robo):
         if self.rect.y > ALTURA:
             self.kill()
 
+class RoboSaltador(Robo):
+    def __init__(self, x, y):
+        super().__init__(x, y)
+        self.image.fill((255, 0, 255))
 
+        self.vel_y = 0
+        self.gravidade = 0.5
+
+        self.forca_pulo = -16
+        self.chao = ALTURA - 40
+        self.tempo_proximo_pulo = random.randint(60, 160)
+
+     
+        self.direcao = random.choice([-1, 1])
+        self.vel_x = 5 
+
+    def atualizar_posicao(self):
+
+    
+        self.vel_y += self.gravidade
+        self.rect.y += self.vel_y
+
+    
+        if self.rect.bottom >= self.chao:
+            self.rect.bottom = self.chao
+            self.vel_y = 0
+
+            self.tempo_proximo_pulo = 0
+            if self.tempo_proximo_pulo <= 0:
+                self.vel_y = self.forca_pulo
+                self.tempo_proximo_pulo = random.randint(80, 200)
+        
+        else:
+            self.tempo_proximo_pulo = 0
+
+        self.rect.x += self.direcao * self.vel_x
+      
+        if self.rect.left <= 0:
+            self.rect.left = 0
+            self.direcao = 1  
+
+        if self.rect.right >= LARGURA:
+            self.rect.right = LARGURA
+            self.direcao = -1  
+   
+        if self.rect.top > ALTURA + 200:
+            self.kill()
 
 # grupos e objetos iniciais
 todos_sprites = pygame.sprite.Group()
@@ -308,3 +354,4 @@ while rodando:
     pygame.display.flip()
 
 pygame.quit()
+
