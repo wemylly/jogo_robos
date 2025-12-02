@@ -11,7 +11,15 @@ pygame.display.set_caption("Robot Defense")
 fundo = pygame.image.load("img/fundo.jpg")
 fundo = pygame.transform.scale(fundo, (LARGURA, ALTURA))
 
-explosao = pygame.image.load("img/explosão.png")
+explosao = pygame.image.load("img/explosao.png")
+
+explosao_frames = [
+    pygame.transform.scale(explosao, (32,32)),
+    pygame.transform.scale(explosao, (64,64)),
+    pygame.transform.scale(explosao, (120,120)),
+    pygame.transform.scale(explosao, (64,64)),
+    pygame.transform.scale(explosao, (32,32)),
+]
 
 FPS = 60
 clock = pygame.time.Clock()
@@ -74,6 +82,29 @@ class Jogador(Entidade):
         self.rect.x = max(0, min(self.rect.x, LARGURA - 20))
         self.rect.y = max(0, min(self.rect.y, ALTURA - 95))
 
+class Explosao(pygame.sprite.Sprite):
+    def __init__(self, x, y):
+        super().__init__()
+        self.frames = explosao_frames
+        self.frame = 0
+        self.image = self.frames[self.frame]
+
+        # salva o centro fixo
+        self.center = (x, y)
+        self.rect = self.image.get_rect(center=self.center)
+
+        self.velocidade_anim = 0.4
+
+    def update(self):
+        self.frame += self.velocidade_anim
+
+        if int(self.frame) >= len(self.frames):
+            self.kill()
+            return
+
+        # troca de imagem mantendo o centro
+        self.image = self.frames[int(self.frame)]
+        self.rect = self.image.get_rect(center=self.center)
 
 # TIRO (DO JOGADOR)
 class Tiro(Entidade):
@@ -287,7 +318,7 @@ while rodando:
         if spawn_timer > 80:
             x = random.randint(40, LARGURA - 40)
             y = -40
-            escolha = random.randint(1, 4)
+            escolha = random.randint(1, 5)
             if escolha == 1:
                 robo = Robo(x, y)
             if escolha == 2:
@@ -296,16 +327,23 @@ while rodando:
                 robo = RoboRapido(x, y)
             if escolha == 4:
                 robo = RoboCiclico(x, y)
+            if escolha == 5:
+                robo = RoboSaltador(x, y)
             todos_sprites.add(robo)
             inimigos.add(robo)
             spawn_timer = 0
 
-        # colisão tiro x robô
-        colisao = pygame.sprite.groupcollide(inimigos, tiros, True, True)
-        pontos += len(colisao)
+        colisoes = pygame.sprite.groupcollide(inimigos, tiros, True, True)
+        for robo in colisoes:
+            pontos += 1
+            
+            explosao = Explosao(robo.rect.centerx, robo.rect.centery)
+            todos_sprites.add(explosao)
 
-        # colisão robô x jogador
-        if pygame.sprite.spritecollide(jogador, inimigos, True):
+        colidiram = pygame.sprite.spritecollide(jogador, inimigos, True)
+        for robo in colidiram:
+            explosao = Explosao(robo.rect.centerx, robo.rect.centery)
+            todos_sprites.add(explosao)
             jogador.vida -= 1
             if jogador.vida <= 0:
                 print("GAME OVER!")
