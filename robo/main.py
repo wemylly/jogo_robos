@@ -90,7 +90,7 @@ while rodando:
         if spawn_timer > 80:
             x = random.randint(40, LARGURA - 40)
             y = -40
-            escolha = random.randint(1, 5)
+            escolha = random.randint(1, 6)
             if escolha == 1:
                 robo = Robo(x, y)
             if escolha == 2:
@@ -101,6 +101,8 @@ while rodando:
                 robo = RoboCiclico(x, y)
             if escolha == 5:
                 robo = RoboSaltador(x, y)
+            if escolha == 6:
+                robo = RoboCacador(x,y,jogador)
             todos_sprites.add(robo)
             inimigos.add(robo)
             spawn_timer = 0
