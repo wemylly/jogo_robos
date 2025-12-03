@@ -11,7 +11,6 @@ pygame.display.set_caption("Robot Defense")
 fundo = pygame.image.load("img/fundo.jpg")
 fundo = pygame.transform.scale(fundo, (LARGURA, ALTURA))
 
-explosao = pygame.image.load("img/explosão.png")
 explosao = pygame.image.load("img/explosao.png")
 
 explosao_frames = [
@@ -43,8 +42,6 @@ class Entidade(pygame.sprite.Sprite):
 class Jogador(Entidade):
     def __init__(self, x, y):
         super().__init__(x, y, 5)
-        self.image = pygame.image.load("img/player.png")
-        self.image = pygame.transform.scale(self.image, (100, 100))
         self.sprites: List[pygame.Surface] = []
 
         jogador1 = pygame.image.load("img/player.png").convert_alpha()
@@ -82,7 +79,7 @@ class Jogador(Entidade):
             self.mover(self.velocidade, 0)
 
         # limites de tela
-        self.rect.x = max(0, min(self.rect.x, LARGURA - 95))
+        self.rect.x = max(0, min(self.rect.x, LARGURA - 20))
         self.rect.y = max(0, min(self.rect.y, ALTURA - 95))
 
 class Explosao(pygame.sprite.Sprite):
@@ -280,6 +277,7 @@ pygame.mixer.music.play(-1)
 tiro_som = pygame.mixer.Sound("sons/tiro.wav")
 morte_som = pygame.mixer.Sound("sons/morte.wav")
 item_som = pygame.mixer.Sound("sons/interação com item.wav")
+morteini_som = pygame.mixer.Sound("sons/morteini.wav")
 
 pontos = 0
 spawn_timer = 0
@@ -342,12 +340,16 @@ while rodando:
             
             explosao = Explosao(robo.rect.centerx, robo.rect.centery)
             todos_sprites.add(explosao)
+            if colisoes:
+                morteini_som.play()
 
         colidiram = pygame.sprite.spritecollide(jogador, inimigos, True)
         for robo in colidiram:
             explosao = Explosao(robo.rect.centerx, robo.rect.centery)
             todos_sprites.add(explosao)
             jogador.vida -= 1
+            if jogador.vida>=1:
+                morteini_som.play()
             if jogador.vida <= 0:
                 print("GAME OVER!")
                 morte_som.play()
@@ -395,4 +397,3 @@ while rodando:
     pygame.display.flip()
 
 pygame.quit()
-
