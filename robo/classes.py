@@ -1,7 +1,7 @@
 import pygame
 import random
 from typing import List
-
+import os
 LARGURA = 1020
 ALTURA = 600
 
@@ -83,7 +83,7 @@ class Explosao(pygame.sprite.Sprite):
         self.center = (x, y)
         self.rect = self.image.get_rect(center=self.center)
 
-        self.velocidade_anim = 0.4
+        self.velocidade_anim = 0.3
 
     def update(self):
         self.frame += self.velocidade_anim
@@ -92,7 +92,7 @@ class Explosao(pygame.sprite.Sprite):
             self.kill()
             return
 
-        # troca de imagem mantendo o centro
+        
         self.image = self.frames[int(self.frame)]
         self.rect = self.image.get_rect(center=self.center)
 
@@ -103,11 +103,20 @@ class Tiro(Entidade):
         self.image = pygame.image.load("img/tiro.png")
         self.image = pygame.transform.scale(self.image, (40, 40))
         self.rect = self.image.get_rect(center=(x, y))
+      
+        self.vel_x = 0
 
     def update(self):
+      
+        try:
+            self.rect.x += getattr(self, "vel_x", 0)
+        except Exception:
+            pass
+       
         self.rect.y -= self.velocidade
-        if self.rect.y < 0:
+        if self.rect.y < 0 or self.rect.right < 0 or self.rect.left > LARGURA:
             self.kill()
+
 
 
 # ROBO BASE
@@ -166,7 +175,7 @@ class RoboCiclico(Robo):
         self.base_y = y
 
         self.raio = 100
-        self.vel_giro = 0.4
+        self.vel_giro = 0.6
        
         self.tabela_x = [0, 1, 2, 3, 2, 1, 0, -1, -2, -3, -2, -1]
         self.tabela_y = [-3, -2, -1, 0, 1, 2, 3, 2, 1, 0, -1, -2]
@@ -240,3 +249,61 @@ class RoboSaltador(Robo):
    
         if self.rect.top > ALTURA + 200:
             self.kill()
+
+class RoboCacador(Robo):
+    def __init__(self, x, y, jogador):
+        super().__init__(x, y)
+
+        self.jogador = jogador
+        self.image = pygame.image.load("img/robo_cinza.png").convert_alpha()
+        self.image = pygame.transform.scale(self.image, (80, 80))
+        self.rect = self.image.get_rect(center=(x, y))
+        self.velocidade = 3
+
+    def atualizar_posicao(self):
+        
+        dx = self.jogador.rect.centerx - self.rect.centerx
+        dy = self.jogador.rect.centery - self.rect.centery
+
+        distancia = max(1, (dx**2 + dy**2) ** 0.5)
+
+        self.rect.x += (dx / distancia) * self.velocidade
+        self.rect.y += (dy / distancia) * self.velocidade
+
+        if self.rect.y > ALTURA + 40:
+            self.kill()
+
+    def update(self):
+        self.atualizar_posicao()
+class PowerUp(pygame.sprite.Sprite):
+    def __init__(self, x, y, cor=(255,255,255), image_path=None):
+        super().__init__()
+        
+        if image_path and os.path.exists(image_path):
+            img = pygame.image.load(image_path).convert_alpha()
+            self.image = pygame.transform.scale(img, (30, 30))
+        else:
+            self.image = pygame.Surface((30, 30), pygame.SRCALPHA)
+            self.image.fill(cor)
+        self.rect = self.image.get_rect(center=(x, y))
+        self.velocidade = 2
+
+    def update(self):
+        self.rect.y += self.velocidade
+        if self.rect.y > ALTURA:
+            self.kill()
+
+class PowerUpVelocidade(PowerUp):
+    def __init__(self, x, y):
+        # amarelo
+        super().__init__(x, y, cor=(255, 255, 0), image_path="robo/powerup_vel.png")
+
+class PowerUpTiroTriplo(PowerUp):
+    def __init__(self, x, y):
+        # roxo
+        super().__init__(x, y, cor=(128, 0, 128), image_path="robo/powerup_tiro.png")
+
+class PowerUpVidaExtra(PowerUp):
+    def __init__(self, x, y):
+        # verde
+        super().__init__(x, y, cor=(0, 255, 0), image_path="robo/powerup_vida.png")
