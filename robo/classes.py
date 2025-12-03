@@ -83,7 +83,7 @@ class Explosao(pygame.sprite.Sprite):
         self.center = (x, y)
         self.rect = self.image.get_rect(center=self.center)
 
-        self.velocidade_anim = 0.4
+        self.velocidade_anim = 0.3
 
     def update(self):
         self.frame += self.velocidade_anim
@@ -166,7 +166,7 @@ class RoboCiclico(Robo):
         self.base_y = y
 
         self.raio = 100
-        self.vel_giro = 0.4
+        self.vel_giro = 0.6
        
         self.tabela_x = [0, 1, 2, 3, 2, 1, 0, -1, -2, -3, -2, -1]
         self.tabela_y = [-3, -2, -1, 0, 1, 2, 3, 2, 1, 0, -1, -2]
