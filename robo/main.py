@@ -1,5 +1,6 @@
 import pygame
 import random
+import os
 
 pygame.init()
 
@@ -7,10 +8,10 @@ LARGURA = 1020
 ALTURA = 600
 TELA = pygame.display.set_mode((LARGURA, ALTURA))
 pygame.display.set_caption("Robot Defense")
-fundo = pygame.image.load("robo/fundo.jpg")
+fundo = pygame.image.load("img/fundo.jpg")
 fundo = pygame.transform.scale(fundo, (LARGURA, ALTURA))
 
-explosao = pygame.image.load("robo/explosão.png")
+explosao = pygame.image.load("img/explosão.png")
 
 FPS = 60
 clock = pygame.time.Clock()
@@ -33,10 +34,13 @@ class Entidade(pygame.sprite.Sprite):
 class Jogador(Entidade):
     def __init__(self, x, y):
         super().__init__(x, y, 5)
-        self.image = pygame.image.load("robo/player.png")
+        self.image = pygame.image.load("img/player.png")
         self.image = pygame.transform.scale(self.image, (100, 100))
         self.rect = self.image.get_rect(center=(x, y))
         self.vida = 5
+        self.vel_base = 5
+        self.tempo_vel = 0
+        self.tempo_tiro_triplo = 0
 
     def update(self):
         keys = pygame.key.get_pressed()
@@ -49,7 +53,15 @@ class Jogador(Entidade):
             self.mover(-self.velocidade, 0)
         if keys[pygame.K_d]:
             self.mover(self.velocidade, 0)
-
+        
+        current_time = pygame.time.get_ticks()
+        if self.tempo_vel > 0:
+            if current_time > self.tempo_vel:
+                self.velocidade = self.vel_base
+                self.tempo_vel = 0
+            else:
+                self.velocidade = 8
+        
         # limites de tela
         self.rect.x = max(0, min(self.rect.x, LARGURA - 20))
         self.rect.y = max(0, min(self.rect.y, ALTURA - 95))
@@ -57,15 +69,17 @@ class Jogador(Entidade):
 
 # TIRO (DO JOGADOR)
 class Tiro(Entidade):
-    def __init__(self, x, y):
+    def __init__(self, x, y, vel_x=0):
         super().__init__(x, y, 10)
-        self.image = pygame.image.load("robo/tiro.png")
+        self.image = pygame.image.load("img/tiro.png")
         self.image = pygame.transform.scale(self.image, (40, 40))
         self.rect = self.image.get_rect(center=(x, y))
+        self.vel_x = vel_x
 
     def update(self):
+        self.rect.x += self.vel_x
         self.rect.y -= self.velocidade
-        if self.rect.y < 0:
+        if self.rect.y < 0 or self.rect.x > LARGURA:
             self.kill()
 
 
@@ -142,13 +156,38 @@ class RoboCiclico(Robo):
         if self.rect.y > ALTURA:
             self.kill()
 
+class PowerUp(Entidade):
+    def __init__(self, x, y, cor):
+        super().__init__(x, y, velocidade=2)
+        if not os.path.exists("robo/powerup.png"):
+            pygame.Surface((30, 30))
+        else:
+            self.image = pygame.image.load("robo/poweup.png")
+        self.image.fill(cor)
+        self.rect = self.image.get_rect(center=(x, y))
+        
+    def update(self):
+        self.rect.y += self.velocidade
+        if self.rect.y > ALTURA:
+            self.kill()
 
+class PowerUpVelocidade(PowerUp):
+    def __init__(self, x, y):
+        super().__init__(x, y, (255, 255, 0))
+
+class PowerUpTiroTriplo(PowerUp):
+    def __init__(self, x, y):
+        super().__init__(x, y, (128, 0, 128))
+        
+class PowerUpVidaExtra(PowerUp):
+    def __init__(self, x, y):
+        super().__init__(x, y, (0, 255, 0))
 
 # grupos e objetos iniciais
 todos_sprites = pygame.sprite.Group()
 inimigos = pygame.sprite.Group()
 tiros = pygame.sprite.Group()
-
+powerups = pygame.sprite.Group()
 
 def reset_game():
     global jogador, todos_sprites, inimigos, tiros, pontos, spawn_timer, game_over
@@ -156,6 +195,7 @@ def reset_game():
     todos_sprites.empty()
     inimigos.empty()
     tiros.empty()
+    powerups.empty()
 
   
     jogador = Jogador(LARGURA // 2, ALTURA - 60)
@@ -173,13 +213,13 @@ todos_sprites.add(jogador)
 
 
 pygame.mixer.init()
-pygame.mixer.music.load("robo/musica de fundo.mp3")
+pygame.mixer.music.load("sons/musica de fundo.mp3")
 pygame.mixer.music.set_volume(0.5)
 pygame.mixer.music.play(-1)
 
-tiro_som = pygame.mixer.Sound("robo/tiro.wav")
-morte_som = pygame.mixer.Sound("robo/morte.wav")
-item_som = pygame.mixer.Sound("robo/interação com item.wav")
+tiro_som = pygame.mixer.Sound("sons/tiro.wav")
+morte_som = pygame.mixer.Sound("sons/morte.wav")
+item_som = pygame.mixer.Sound("sons/interação com item.wav")
 
 pontos = 0
 spawn_timer = 0
@@ -202,7 +242,7 @@ while rodando:
                 
                 reset_game()
                 pygame.mixer.init()
-                pygame.mixer.music.load("robo/musica de fundo.mp3")
+                pygame.mixer.music.load("sons/musica de fundo.mp3")
                 pygame.mixer.music.set_volume(0.5)
                 pygame.mixer.music.play(-1)
             continue
@@ -210,9 +250,18 @@ while rodando:
       
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_SPACE:
-                tiro = Tiro(jogador.rect.centerx, jogador.rect.y)
-                todos_sprites.add(tiro)
-                tiros.add(tiro)
+                current_time = pygame.time.get_ticks()
+                if current_time < jogador.tempo_tiro_triplo:
+                    tiro1 = Tiro(jogador.rect.centerx, jogador.rect.y, -3)
+                    tiro2 = Tiro(jogador.rect.centerx, jogador.rect.y, 0)
+                    tiro3 = Tiro(jogador.rect.centerx, jogador.rect.y, 3)
+                    for t in [tiro1, tiro2, tiro3]:
+                        todos_sprites.add(t)
+                        tiros.add(t)
+                else:
+                    tiro = Tiro(jogador.rect.centerx, jogador.rect.y)
+                    todos_sprites.add(tiro)
+                    tiros.add(tiro)
                 tiro_som.play()
 
     if not game_over:
@@ -237,6 +286,14 @@ while rodando:
         # colisão tiro x robô
         colisao = pygame.sprite.groupcollide(inimigos, tiros, True, True)
         pontos += len(colisao)
+        
+        for enemy in colisao:
+            if random.random() < 0.2:
+                px, py = enemy.rect.center
+                p_tipo = random.choice([PowerUpTiroTriplo, PowerUpVelocidade, PowerUpVidaExtra])
+                powerup = p_tipo(px, py)
+                todos_sprites.add(powerup)
+                powerups.add(powerup)
 
         # colisão robô x jogador
         if pygame.sprite.spritecollide(jogador, inimigos, True):
@@ -247,7 +304,17 @@ while rodando:
             
                 telaparada = TELA.copy()
                 game_over = True
-
+        
+        powerup_col = pygame.sprite.spritecollide(jogador, powerups, True)
+        for p in powerup_col:
+            current_time = pygame.time.get_ticks()
+            if isinstance(p, PowerUpVelocidade):
+                jogador.tempo_vel = current_time + 10000
+            elif isinstance(p, PowerUpTiroTriplo):
+                jogador.tempo_tiro_triplo = current_time + 10000
+            elif isinstance(p, PowerUpVidaExtra):
+                jogador.vida += 1
+            item_som.play()
     
         todos_sprites.update()
 
