@@ -1,6 +1,10 @@
 import pygame
 import random
+<<<<<<< HEAD
 import os
+=======
+from typing import List
+>>>>>>> main
 
 pygame.init()
 
@@ -11,7 +15,19 @@ pygame.display.set_caption("Robot Defense")
 fundo = pygame.image.load("img/fundo.jpg")
 fundo = pygame.transform.scale(fundo, (LARGURA, ALTURA))
 
+<<<<<<< HEAD
 explosao = pygame.image.load("img/explosão.png")
+=======
+explosao = pygame.image.load("img/explosao.png")
+
+explosao_frames = [
+    pygame.transform.scale(explosao, (32,32)),
+    pygame.transform.scale(explosao, (64,64)),
+    pygame.transform.scale(explosao, (120,120)),
+    pygame.transform.scale(explosao, (64,64)),
+    pygame.transform.scale(explosao, (32,32)),
+]
+>>>>>>> main
 
 FPS = 60
 clock = pygame.time.Clock()
@@ -34,8 +50,26 @@ class Entidade(pygame.sprite.Sprite):
 class Jogador(Entidade):
     def __init__(self, x, y):
         super().__init__(x, y, 5)
+<<<<<<< HEAD
         self.image = pygame.image.load("img/player.png")
         self.image = pygame.transform.scale(self.image, (100, 100))
+=======
+        self.sprites: List[pygame.Surface] = []
+
+        jogador1 = pygame.image.load("img/player.png").convert_alpha()
+        jogador2 = pygame.image.load("img/player2.png").convert_alpha()
+
+        jogador1 = pygame.transform.scale(jogador1, (80,80))  
+        jogador2 = pygame.transform.scale(jogador2, (80,80))
+
+        self.sprites.append(jogador1)
+        self.sprites.append(jogador2)
+
+        self.frame = 0
+
+        self.image = self.sprites[0]
+        self.rect = self.image.get_rect(center=(400, 600))
+>>>>>>> main
         self.rect = self.image.get_rect(center=(x, y))
         self.vida = 5
         self.vel_base = 5
@@ -43,6 +77,12 @@ class Jogador(Entidade):
         self.tempo_tiro_triplo = 0
 
     def update(self):
+        self.frame += 0.1
+        if self.frame >= len(self.sprites):
+            self.frame = 0
+
+        self.image = self.sprites[int(self.frame)]
+
         keys = pygame.key.get_pressed()
 
         if keys[pygame.K_w]:
@@ -66,6 +106,29 @@ class Jogador(Entidade):
         self.rect.x = max(0, min(self.rect.x, LARGURA - 20))
         self.rect.y = max(0, min(self.rect.y, ALTURA - 95))
 
+class Explosao(pygame.sprite.Sprite):
+    def __init__(self, x, y):
+        super().__init__()
+        self.frames = explosao_frames
+        self.frame = 0
+        self.image = self.frames[self.frame]
+
+        # salva o centro fixo
+        self.center = (x, y)
+        self.rect = self.image.get_rect(center=self.center)
+
+        self.velocidade_anim = 0.4
+
+    def update(self):
+        self.frame += self.velocidade_anim
+
+        if int(self.frame) >= len(self.frames):
+            self.kill()
+            return
+
+        # troca de imagem mantendo o centro
+        self.image = self.frames[int(self.frame)]
+        self.rect = self.image.get_rect(center=self.center)
 
 # TIRO (DO JOGADOR)
 class Tiro(Entidade):
@@ -156,6 +219,7 @@ class RoboCiclico(Robo):
         if self.rect.y > ALTURA:
             self.kill()
 
+<<<<<<< HEAD
 class PowerUp(Entidade):
     def __init__(self, x, y, cor):
         super().__init__(x, y, velocidade=2)
@@ -182,6 +246,55 @@ class PowerUpTiroTriplo(PowerUp):
 class PowerUpVidaExtra(PowerUp):
     def __init__(self, x, y):
         super().__init__(x, y, (0, 255, 0))
+=======
+class RoboSaltador(Robo):
+    def __init__(self, x, y):
+        super().__init__(x, y)
+        self.image.fill((255, 0, 255))
+
+        self.vel_y = 0
+        self.gravidade = 0.5
+
+        self.forca_pulo = -16
+        self.chao = ALTURA - 40
+        self.tempo_proximo_pulo = random.randint(60, 160)
+
+     
+        self.direcao = random.choice([-1, 1])
+        self.vel_x = 5 
+
+    def atualizar_posicao(self):
+
+    
+        self.vel_y += self.gravidade
+        self.rect.y += self.vel_y
+
+    
+        if self.rect.bottom >= self.chao:
+            self.rect.bottom = self.chao
+            self.vel_y = 0
+
+            self.tempo_proximo_pulo = 0
+            if self.tempo_proximo_pulo <= 0:
+                self.vel_y = self.forca_pulo
+                self.tempo_proximo_pulo = random.randint(80, 200)
+        
+        else:
+            self.tempo_proximo_pulo = 0
+
+        self.rect.x += self.direcao * self.vel_x
+      
+        if self.rect.left <= 0:
+            self.rect.left = 0
+            self.direcao = 1  
+
+        if self.rect.right >= LARGURA:
+            self.rect.right = LARGURA
+            self.direcao = -1  
+   
+        if self.rect.top > ALTURA + 200:
+            self.kill()
+>>>>>>> main
 
 # grupos e objetos iniciais
 todos_sprites = pygame.sprite.Group()
@@ -220,6 +333,10 @@ pygame.mixer.music.play(-1)
 tiro_som = pygame.mixer.Sound("sons/tiro.wav")
 morte_som = pygame.mixer.Sound("sons/morte.wav")
 item_som = pygame.mixer.Sound("sons/interação com item.wav")
+<<<<<<< HEAD
+=======
+morteini_som = pygame.mixer.Sound("sons/morteini.wav")
+>>>>>>> main
 
 pontos = 0
 spawn_timer = 0
@@ -270,7 +387,7 @@ while rodando:
         if spawn_timer > 80:
             x = random.randint(40, LARGURA - 40)
             y = -40
-            escolha = random.randint(1, 4)
+            escolha = random.randint(1, 5)
             if escolha == 1:
                 robo = Robo(x, y)
             if escolha == 2:
@@ -279,10 +396,13 @@ while rodando:
                 robo = RoboRapido(x, y)
             if escolha == 4:
                 robo = RoboCiclico(x, y)
+            if escolha == 5:
+                robo = RoboSaltador(x, y)
             todos_sprites.add(robo)
             inimigos.add(robo)
             spawn_timer = 0
 
+<<<<<<< HEAD
         # colisão tiro x robô
         colisao = pygame.sprite.groupcollide(inimigos, tiros, True, True)
         pontos += len(colisao)
@@ -294,10 +414,24 @@ while rodando:
                 powerup = p_tipo(px, py)
                 todos_sprites.add(powerup)
                 powerups.add(powerup)
+=======
+        colisoes = pygame.sprite.groupcollide(inimigos, tiros, True, True)
+        for robo in colisoes:
+            pontos += 1
+            
+            explosao = Explosao(robo.rect.centerx, robo.rect.centery)
+            todos_sprites.add(explosao)
+            if colisoes:
+                morteini_som.play()
+>>>>>>> main
 
-        # colisão robô x jogador
-        if pygame.sprite.spritecollide(jogador, inimigos, True):
+        colidiram = pygame.sprite.spritecollide(jogador, inimigos, True)
+        for robo in colidiram:
+            explosao = Explosao(robo.rect.centerx, robo.rect.centery)
+            todos_sprites.add(explosao)
             jogador.vida -= 1
+            if jogador.vida>=1:
+                morteini_som.play()
             if jogador.vida <= 0:
                 print("GAME OVER!")
                 morte_som.play()
