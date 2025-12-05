@@ -122,7 +122,7 @@ class Tiro(Entidade):
 # ROBO BASE
 class Robo(Entidade):
     def __init__(self, x, y):
-        super().__init__(x, y, velocidade=2)
+        super().__init__(x, y, velocidade=4)
         self.image = pygame.image.load("img/robo_azul.png").convert_alpha()
         self.image = pygame.transform.scale(self.image, (80, 80))
         self.rect = self.image.get_rect(center=(x, y))
@@ -161,7 +161,7 @@ class RoboRapido(Robo):
         self.image = pygame.image.load("img/robo_rosa.png").convert_alpha()
         self.image = pygame.transform.scale(self.image, (80, 80))
         self.rect = self.image.get_rect(center=(x, y))
-        self.velocidade = 6
+        self.velocidade = 10
 
 class RoboCiclico(Robo):
     def __init__(self, x, y):
@@ -275,16 +275,11 @@ class RoboCacador(Robo):
 
     def update(self):
         self.atualizar_posicao()
+
 class PowerUp(pygame.sprite.Sprite):
-    def __init__(self, x, y, cor=(255,255,255), image_path=None):
+    def __init__(self, x, y):
         super().__init__()
         
-        if image_path and os.path.exists(image_path):
-            img = pygame.image.load(image_path).convert_alpha()
-            self.image = pygame.transform.scale(img, (30, 30))
-        else:
-            self.image = pygame.Surface((30, 30), pygame.SRCALPHA)
-            self.image.fill(cor)
         self.rect = self.image.get_rect(center=(x, y))
         self.velocidade = 2
 
@@ -295,15 +290,19 @@ class PowerUp(pygame.sprite.Sprite):
 
 class PowerUpVelocidade(PowerUp):
     def __init__(self, x, y):
-        # amarelo
-        super().__init__(x, y, cor=(255, 255, 0), image_path="robo/powerup_vel.png")
+        self.image = pygame.image.load("img/velocidade.png")
+        self.image = pygame.transform.scale(self.image, (80,60))
+        super().__init__(x, y)
+        
 
 class PowerUpTiroTriplo(PowerUp):
     def __init__(self, x, y):
-        # roxo
-        super().__init__(x, y, cor=(128, 0, 128), image_path="robo/powerup_tiro.png")
+        self.image = pygame.image.load("img/triplo.png")
+        self.image = pygame.transform.scale(self.image, (80,60))
+        super().__init__(x, y)
 
 class PowerUpVidaExtra(PowerUp):
     def __init__(self, x, y):
-        # verde
-        super().__init__(x, y, cor=(0, 255, 0), image_path="robo/powerup_vida.png")
+        self.image = pygame.image.load("img/vida.png")
+        self.image = pygame.transform.scale(self.image, (80,60))
+        super().__init__(x, y)

@@ -9,23 +9,23 @@ def tela_inicial(TELA, LARGURA, ALTURA):
     logo = pygame.image.load("img/logo.png").convert_alpha()
     logo = pygame.transform.scale(logo, (600, 400))
 
-    fonte = pygame.font.SysFont(None, 40)
+    fonte = pygame.font.SysFont(None, 50)
 
     while True:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 return False
-            if event.type == pygame.KEYDOWN and event.key == pygame.K_RETURN:
+            if event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
                 return True
 
         # fundo da tela
         TELA.blit(fundo, (0, 0))
 
         # Logo centralizada
-        TELA.blit(logo, logo.get_rect(center=(LARGURA//2, ALTURA//2)))
+        TELA.blit(logo, logo.get_rect(center=(LARGURA//2, ALTURA//2.3)))
 
         # Texto
-        texto = fonte.render("Pressione ENTER para iniciar", True, (255, 255, 255))
+        texto = fonte.render("Pressione ESPAÇO para iniciar", True, (255, 255, 255))
         TELA.blit(texto, texto.get_rect(center=(LARGURA//2, ALTURA - 80)))
 
         pygame.display.update()
