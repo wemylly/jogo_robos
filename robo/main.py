@@ -134,7 +134,7 @@ while rodando:
     if not game_over:
 
         spawn_timer += 1
-        if spawn_timer > 80:
+        if spawn_timer > 60:
             x = random.randint(40, LARGURA - 40)
             y = -40
             escolha = random.randint(1, 6)
@@ -177,7 +177,7 @@ while rodando:
                     pass
 
          
-            if random.random() < 0.35:
+            if random.random() < 0.1:
                 px, py = robo.rect.center
                 p_tipo = random.choice([PowerUpTiroTriplo, PowerUpVelocidade, PowerUpVidaExtra])
                 powerup = p_tipo(px, py)
@@ -227,13 +227,6 @@ while rodando:
             elif isinstance(p, PowerUpVidaExtra):
                 jogador.vida += 1
                 cura.play()
-                
-
-          
-           
-              
-            
-
      
         current_time = pygame.time.get_ticks()
        

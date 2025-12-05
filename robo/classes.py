@@ -38,8 +38,8 @@ class Jogador(Entidade):
         jogador1 = pygame.image.load("img/player.png").convert_alpha()
         jogador2 = pygame.image.load("img/player2.png").convert_alpha()
 
-        jogador1 = pygame.transform.scale(jogador1, (80,80))  
-        jogador2 = pygame.transform.scale(jogador2, (80,80))
+        jogador1 = pygame.transform.scale(jogador1, (100,100))  
+        jogador2 = pygame.transform.scale(jogador2, (100,100))
 
         self.sprites.append(jogador1)
         self.sprites.append(jogador2)
@@ -122,7 +122,7 @@ class Tiro(Entidade):
 # ROBO BASE
 class Robo(Entidade):
     def __init__(self, x, y):
-        super().__init__(x, y, velocidade=4)
+        super().__init__(x, y, velocidade=5)
         self.image = pygame.image.load("img/robo_azul.png").convert_alpha()
         self.image = pygame.transform.scale(self.image, (80, 80))
         self.rect = self.image.get_rect(center=(x, y))
@@ -145,11 +145,12 @@ class RoboZigueZague(Robo):
         self.rect = self.image.get_rect(center=(x, y))
 
         self.direcao = 1
-        self.velocidade = 3
+        self.velocidade = 1.2
+        self.vel_x = 5
 
     def atualizar_posicao(self):
         self.rect.y += self.velocidade
-        self.rect.x += self.direcao * 3
+        self.rect.x += self.direcao * self.vel_x
 
         if self.rect.x <= 0 or self.rect.x >= LARGURA - 40:
             self.direcao *= -1
@@ -161,7 +162,7 @@ class RoboRapido(Robo):
         self.image = pygame.image.load("img/robo_rosa.png").convert_alpha()
         self.image = pygame.transform.scale(self.image, (80, 80))
         self.rect = self.image.get_rect(center=(x, y))
-        self.velocidade = 10
+        self.velocidade = 14
 
 class RoboCiclico(Robo):
     def __init__(self, x, y):
@@ -174,14 +175,14 @@ class RoboCiclico(Robo):
         self.base_x = x
         self.base_y = y
 
-        self.raio = 100
-        self.vel_giro = 0.6
+        self.raio = 150
+        self.vel_giro = 0.5
        
         self.tabela_x = [0, 1, 2, 3, 2, 1, 0, -1, -2, -3, -2, -1]
         self.tabela_y = [-3, -2, -1, 0, 1, 2, 3, 2, 1, 0, -1, -2]
 
         self.indice = 0
-        self.descida = 1
+        self.descida = 1.4
 
     def atualizar_posicao(self):
         
@@ -216,14 +217,15 @@ class RoboSaltador(Robo):
 
      
         self.direcao = random.choice([-1, 1])
-        self.vel_x = 5 
+        self.vel_x = 4
 
     def atualizar_posicao(self):
 
-    
         self.vel_y += self.gravidade
-        self.rect.y += self.vel_y
+        if self.vel_y > 7:
+            self.vel_y = 7
 
+        self.rect.y += self.vel_y
     
         if self.rect.bottom >= self.chao:
             self.rect.bottom = self.chao
@@ -258,7 +260,7 @@ class RoboCacador(Robo):
         self.image = pygame.image.load("img/robo_cinza.png").convert_alpha()
         self.image = pygame.transform.scale(self.image, (80, 80))
         self.rect = self.image.get_rect(center=(x, y))
-        self.velocidade = 3
+        self.velocidade = 5
 
     def atualizar_posicao(self):
         
