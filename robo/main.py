@@ -23,6 +23,7 @@ continuar = tela_inicial(TELA, LARGURA, ALTURA)
 if not continuar:
     pygame.quit()
     exit()
+pausado = False
 
 FPS = 60
 clock = pygame.time.Clock()
@@ -47,6 +48,29 @@ def salvar_recorde(valor, caminho="robo/recorde.txt"):
         pass
 
 recorde = carregar_recorde()
+
+def tela_pause(tela, largura, altura, recorde, pontos):
+    font1 = pygame.font.SysFont(None, 64)
+    font2 = pygame.font.SysFont(None, 36)
+
+    texto = font1.render("JOGO PAUSADO", True, (255, 255, 255))
+    texto_pontos = font2.render(f"Pontos atuais: {pontos}", True, (255, 255, 255))
+    texto_recorde = font2.render(f"Recorde: {recorde}", True, (255, 255, 255))
+    texto_info = font2.render("Pressione ESC para continuar", True, (255, 255, 255))
+
+    rect_titulo = texto.get_rect(center=(largura // 2, altura // 2 - 60))
+    rect_pontos = texto_pontos.get_rect(center=(largura // 2, altura // 2 - 10))
+    rect_recorde = texto_recorde.get_rect(center=(largura // 2, altura // 2 + 30))
+    rect_info = texto_info.get_rect(center=(largura // 2, altura // 2 + 80))
+
+    fundo = pygame.image.load("img/fundo.jpg")
+    fundo = pygame.transform.scale(fundo, (largura, altura))
+    tela.blit(fundo, (0, 0))
+
+    tela.blit(texto, rect_titulo)
+    tela.blit(texto_pontos, rect_pontos)
+    tela.blit(texto_recorde, rect_recorde)
+    tela.blit(texto_info, rect_info)
 
 def reset_jogo():
     global jogador, todos_sprites, inimigos, tiros, powerups, pontos, spawn_timer, game_over
@@ -105,6 +129,10 @@ while rodando:
             continue
 
         if event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_ESCAPE and not pausado and not game_over:
+                pausado = True
+            elif event.key == pygame.K_ESCAPE and pausado:
+                pausado = False
             if event.key == pygame.K_SPACE:
                 tempo_do_jogo = pygame.time.get_ticks()
                 tiro_triplo_tempo = getattr(jogador, "tempo_tiro_triplo", 0)
@@ -125,6 +153,11 @@ while rodando:
                     todos_sprites.add(tiro)
                     tiros.add(tiro)
                 tiro_som.play()
+
+    if pausado:
+        tela_pause(TELA, LARGURA, ALTURA, recorde, pontos)
+        pygame.display.flip()
+        continue
 
     if not game_over:
         spawn_timer += 1
