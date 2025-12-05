@@ -164,7 +164,7 @@ while rodando:
                     morteini_som.play()
                 except Exception:
                     pass
-            if random.random() < 0.35:
+            if random.random() < 0.05:
                 px, py = robo.rect.center
                 p_tipo = random.choice([PowerUpTiroTriplo, PowerUpVelocidade, PowerUpVidaExtra])
                 powerup = p_tipo(px, py)
