@@ -1,6 +1,7 @@
 import pygame
 import random
-from classes import * 
+from classes import *
+from inicio import tela_inicial 
 
 pygame.init()
 
@@ -18,6 +19,13 @@ TELA = pygame.display.set_mode((LARGURA, ALTURA))
 fundo = pygame.image.load("img/fundo.jpg")
 fundo = pygame.transform.scale(fundo, (LARGURA, ALTURA))
 
+# --- tela inicial ---
+continuar = tela_inicial(TELA, LARGURA, ALTURA)
+if not continuar:
+    pygame.quit()
+    exit()
+
+
 FPS = 60
 clock = pygame.time.Clock()
 
@@ -26,8 +34,6 @@ todos_sprites = pygame.sprite.Group()
 inimigos = pygame.sprite.Group()
 tiros = pygame.sprite.Group()
 powerups = pygame.sprite.Group()  
-
-
 
 
 
@@ -74,6 +80,14 @@ telaparada = None
 
 
 DURACAO_POWERUP_MS = 10000  
+
+# --- TELA INICIAL COM LOGO ---
+logo = pygame.image.load("img/logo.png").convert_alpha()
+logo = pygame.transform.scale(logo, (600, 400))
+
+mostrar_tela_inicial = True
+
+
 
 while rodando:
     clock.tick(FPS)

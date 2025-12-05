@@ -69,7 +69,7 @@ class Jogador(Entidade):
             self.mover(self.velocidade, 0)
 
         # limites de tela
-        self.rect.x = max(0, min(self.rect.x, LARGURA - 20))
+        self.rect.x = max(0, min(self.rect.x, LARGURA - 95))
         self.rect.y = max(0, min(self.rect.y, ALTURA - 95))
 
 class Explosao(pygame.sprite.Sprite):
