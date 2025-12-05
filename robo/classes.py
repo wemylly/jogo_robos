@@ -48,7 +48,7 @@ class Jogador(Entidade):
 
         self.image = self.sprites[0]
         self.rect = self.image.get_rect(center=(x, y))
-        self.vida = 5
+        self.vida = 1
 
     def update(self):
         self.frame += 0.1
