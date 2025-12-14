@@ -308,3 +308,67 @@ class PowerUpVidaExtra(PowerUp):
         self.image = pygame.image.load("img/vida.png")
         self.image = pygame.transform.scale(self.image, (80,60))
         super().__init__(x, y)
+
+class Boss(pygame.sprite.Sprite):
+    def __init__(self, x, y, jogador, grupo_tiros):
+        super().__init__()
+
+        self.image = pygame.image.load("img/boss.png").convert_alpha()
+        self.image = pygame.transform.scale(self.image, (180, 180))
+        self.rect = self.image.get_rect(center=(x, y))
+
+        self.jogador = jogador
+        self.grupo_tiros = grupo_tiros
+
+        self.vida_max = 100
+        self.vida = 100
+
+        self.vel_x = 3
+        self.tempo_ultimo_tiro = pygame.time.get_ticks()
+        self.intervalo_tiro = 1200 
+
+    def atirar(self):
+        tiro = TiroBoss(self.rect.centerx, self.rect.centery, self.jogador)
+        self.grupo_tiros.add(tiro)
+
+    def update(self):
+        self.rect.x += self.vel_x
+        if self.rect.left <= 0 or self.rect.right >= LARGURA:
+            self.vel_x *= -1
+
+        agora = pygame.time.get_ticks()
+        if agora - self.tempo_ultimo_tiro > self.intervalo_tiro:
+            self.atirar()
+            self.tempo_ultimo_tiro = agora
+
+    def desenhar_barra_vida(self, tela):
+        largura = 150
+        altura = 15
+        x = self.rect.centerx - largura // 2
+        y = self.rect.top - 20
+
+        proporcao = self.vida / self.vida_max
+        pygame.draw.rect(tela, (255, 0, 0), (x, y, largura, altura))
+        pygame.draw.rect(tela, (0, 255, 0), (x, y, largura * proporcao, altura))
+
+class TiroBoss(pygame.sprite.Sprite):
+    def __init__(self, x, y, alvo):
+        super().__init__()
+        self.image = pygame.image.load("img/tiro_boss.png").convert_alpha()
+        self.image = pygame.transform.scale(self.image, (25, 25))
+        self.rect = self.image.get_rect(center=(x, y))
+
+        dx = alvo.rect.centerx - x
+        dy = alvo.rect.centery - y
+        distancia = max(1, (dx**2 + dy**2) ** 0.5)
+
+        self.vel_x = (dx / distancia) * 6
+        self.vel_y = (dy / distancia) * 6
+
+    def update(self):
+        self.rect.x += self.vel_x
+        self.rect.y += self.vel_y
+
+        if (self.rect.top > ALTURA or self.rect.bottom < 0 or
+            self.rect.left > LARGURA or self.rect.right < 0):
+            self.kill()

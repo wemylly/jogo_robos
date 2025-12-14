@@ -32,6 +32,8 @@ todos_sprites = pygame.sprite.Group()
 inimigos = pygame.sprite.Group()
 tiros = pygame.sprite.Group()
 powerups = pygame.sprite.Group()
+tiros_boss = pygame.sprite.Group()
+boss_grupo = pygame.sprite.Group()
 
 def carregar_recorde(caminho="robo/recorde.txt"):
     try:
@@ -183,6 +185,10 @@ while rodando:
             todos_sprites.add(robo)
             inimigos.add(robo)
             spawn_timer = 0
+            if pontos >= 20 and len(boss_grupo) == 0:
+                boss = Boss(LARGURA // 2, 120, jogador, tiros_boss)
+                todos_sprites.add(boss)
+                boss_grupo.add(boss)
 
         colisoes = pygame.sprite.groupcollide(inimigos, tiros, True, True)
         for robo in colisoes:
@@ -241,6 +247,24 @@ while rodando:
                 jogador.vida += 1
                 cura.play()
 
+        colisao_boss = pygame.sprite.groupcollide(boss_grupo, tiros, False, True)
+        for boss in colisao_boss:
+            boss.vida -= 5
+            if boss.vida <= 0:
+                boss.kill()
+                pontos += 20
+
+        acertou = pygame.sprite.spritecollide(jogador, tiros_boss, True)
+        for _ in acertou:
+            jogador.vida -= 1
+            if jogador.vida <= 0:
+                if pontos > recorde:
+                    recorde = pontos
+                    salvar_recorde(recorde)
+                morte_som.play()
+                telaparada = TELA.copy()
+                game_over = True
+
         tempo_do_jogo = pygame.time.get_ticks()
         if hasattr(jogador, "tempo_vel") and jogador.tempo_vel:
             if tempo_do_jogo > jogador.tempo_vel:
@@ -252,9 +276,14 @@ while rodando:
                 jogador.tempo_vel = 0
 
         todos_sprites.update()
+        tiros_boss.update()
 
         TELA.blit(fundo, (0, 0))
         todos_sprites.draw(TELA)
+        tiros_boss.draw(TELA)
+
+        for boss in boss_grupo:
+            boss.desenhar_barra_vida(TELA)
 
         fonte_painel = pygame.font.SysFont(None, 30)
         texto = fonte_painel.render(f"Vida: {jogador.vida}  |  Pontos: {pontos}", True, (255, 255, 255))
