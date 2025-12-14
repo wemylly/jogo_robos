@@ -12,7 +12,7 @@ def tela_inicial(TELA, LARGURA, ALTURA):
     logo = pygame.image.load("img/logo.png").convert_alpha()
     logo = pygame.transform.scale(logo, (600, 400))
 
-    fonte = pygame.font.SysFont(None, 50)
+    fonte = pygame.font.Font("fontes/upheavtt.ttf", 50)
 
     while True:
         

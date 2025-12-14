@@ -23,7 +23,9 @@ continuar = tela_inicial(TELA, LARGURA, ALTURA)
 if not continuar:
     pygame.quit()
     exit()
+pausado = False
 
+boss_ocorreu = 0
 FPS = 60
 clock = pygame.time.Clock()
 
@@ -31,6 +33,8 @@ todos_sprites = pygame.sprite.Group()
 inimigos = pygame.sprite.Group()
 tiros = pygame.sprite.Group()
 powerups = pygame.sprite.Group()
+tiros_boss = pygame.sprite.Group()
+boss_grupo = pygame.sprite.Group()
 
 def carregar_recorde(caminho="robo/recorde.txt"):
     try:
@@ -48,8 +52,31 @@ def salvar_recorde(valor, caminho="robo/recorde.txt"):
 
 recorde = carregar_recorde()
 
+def tela_pause(tela, largura, altura, recorde, pontos):
+    font1 = pygame.font.SysFont(None, 64)
+    font2 = pygame.font.SysFont(None, 36)
+
+    texto = font1.render("JOGO PAUSADO", True, (255, 255, 255))
+    texto_pontos = font2.render(f"Pontos atuais: {pontos}", True, (255, 255, 255))
+    texto_recorde = font2.render(f"Recorde: {recorde}", True, (255, 255, 255))
+    texto_info = font2.render("Pressione ESC para continuar", True, (255, 255, 255))
+
+    rect_titulo = texto.get_rect(center=(largura // 2, altura // 2 - 60))
+    rect_pontos = texto_pontos.get_rect(center=(largura // 2, altura // 2 - 10))
+    rect_recorde = texto_recorde.get_rect(center=(largura // 2, altura // 2 + 30))
+    rect_info = texto_info.get_rect(center=(largura // 2, altura // 2 + 80))
+
+    fundo = pygame.image.load("img/fundo.jpg")
+    fundo = pygame.transform.scale(fundo, (largura, altura))
+    tela.blit(fundo, (0, 0))
+
+    tela.blit(texto, rect_titulo)
+    tela.blit(texto_pontos, rect_pontos)
+    tela.blit(texto_recorde, rect_recorde)
+    tela.blit(texto_info, rect_info)
+
 def reset_jogo():
-    global jogador, todos_sprites, inimigos, tiros, powerups, pontos, spawn_timer, game_over
+    global jogador, todos_sprites, inimigos, tiros, powerups, pontos, spawn_timer, game_over, boss_ocorreu, boss_grupo, tiros_boss
     todos_sprites.empty()
     inimigos.empty()
     tiros.empty()
@@ -59,6 +86,9 @@ def reset_jogo():
     pontos = 0
     spawn_timer = 0
     game_over = False
+    boss_ocorreu = 0
+    boss_grupo.empty()
+    tiros_boss.empty()
 
 jogador = Jogador(LARGURA // 2, ALTURA - 60)
 todos_sprites.add(jogador)
@@ -105,6 +135,10 @@ while rodando:
             continue
 
         if event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_ESCAPE and not pausado and not game_over:
+                pausado = True
+            elif event.key == pygame.K_ESCAPE and pausado:
+                pausado = False
             if event.key == pygame.K_SPACE:
                 tempo_do_jogo = pygame.time.get_ticks()
                 tiro_triplo_tempo = getattr(jogador, "tempo_tiro_triplo", 0)
@@ -125,6 +159,11 @@ while rodando:
                     todos_sprites.add(tiro)
                     tiros.add(tiro)
                 tiro_som.play()
+
+    if pausado:
+        tela_pause(TELA, LARGURA, ALTURA, recorde, pontos)
+        pygame.display.flip()
+        continue
 
     if not game_over:
         spawn_timer += 1
@@ -150,6 +189,14 @@ while rodando:
             todos_sprites.add(robo)
             inimigos.add(robo)
             spawn_timer = 0
+            if pontos >= 20 and len(boss_grupo) == 0 and boss_ocorreu == 0:
+                boss = Boss(LARGURA // 2, 120, jogador, tiros_boss)
+                todos_sprites.add(boss)
+                boss_grupo.add(boss)
+                pygame.mixer.music.load("sons/musica_boss.mp3")
+                pygame.mixer.music.set_volume(0.25)
+                pygame.mixer.music.play(-1)
+                boss_ocorreu +=1
 
         colisoes = pygame.sprite.groupcollide(inimigos, tiros, True, True)
         for robo in colisoes:
@@ -164,7 +211,7 @@ while rodando:
                     morteini_som.play()
                 except Exception:
                     pass
-            if random.random() < 0.35:
+            if random.random() < 0.05:
                 px, py = robo.rect.center
                 p_tipo = random.choice([PowerUpTiroTriplo, PowerUpVelocidade, PowerUpVidaExtra])
                 powerup = p_tipo(px, py)
@@ -208,6 +255,27 @@ while rodando:
                 jogador.vida += 1
                 cura.play()
 
+        colisao_boss = pygame.sprite.groupcollide(boss_grupo, tiros, False, True)
+        for boss in colisao_boss:
+            boss.vida -= 5
+            if boss.vida <= 0:
+                boss.kill()
+                pontos += 20
+                pygame.mixer.music.load("sons/musica de fundo.mp3")
+                pygame.mixer.music.set_volume(0.35)
+                pygame.mixer.music.play(-1)
+
+        acertou = pygame.sprite.spritecollide(jogador, tiros_boss, True)
+        for _ in acertou:
+            jogador.vida -= 1
+            if jogador.vida <= 0:
+                if pontos > recorde:
+                    recorde = pontos
+                    salvar_recorde(recorde)
+                morte_som.play()
+                telaparada = TELA.copy()
+                game_over = True
+
         tempo_do_jogo = pygame.time.get_ticks()
         if hasattr(jogador, "tempo_vel") and jogador.tempo_vel:
             if tempo_do_jogo > jogador.tempo_vel:
@@ -219,9 +287,14 @@ while rodando:
                 jogador.tempo_vel = 0
 
         todos_sprites.update()
+        tiros_boss.update()
 
         TELA.blit(fundo, (0, 0))
         todos_sprites.draw(TELA)
+        tiros_boss.draw(TELA)
+
+        for boss in boss_grupo:
+            boss.desenhar_barra_vida(TELA)
 
         fonte_painel = pygame.font.SysFont(None, 30)
         texto = fonte_painel.render(f"Vida: {jogador.vida}  |  Pontos: {pontos}", True, (255, 255, 255))
