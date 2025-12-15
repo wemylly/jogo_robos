@@ -23,7 +23,12 @@ continuar = tela_inicial(TELA, LARGURA, ALTURA)
 if not continuar:
     pygame.quit()
     exit()
+tempo_inicio = pygame.time.get_ticks()
+tempo_sem_dano = tempo_inicio
 pausado = False
+
+SPAWN_INICIAL = 120
+SPAWN_MINIMO = 40
 
 boss_ocorreu = 0
 FPS = 60
@@ -35,6 +40,16 @@ tiros = pygame.sprite.Group()
 powerups = pygame.sprite.Group()
 tiros_boss = pygame.sprite.Group()
 boss_grupo = pygame.sprite.Group()
+
+def efeito_apocalipse(tela):
+    flash = pygame.Surface((LARGURA, ALTURA))
+    flash.fill((255, 255, 255))
+
+    for alpha in range(0, 180, 15):
+        flash.set_alpha(alpha)
+        tela.blit(flash, (0, 0))
+        pygame.display.flip()
+        pygame.time.delay(30)
 
 def carregar_recorde(caminho="robo/recorde.txt"):
     try:
@@ -76,19 +91,24 @@ def tela_pause(tela, largura, altura, recorde, pontos):
     tela.blit(texto_info, rect_info)
 
 def reset_jogo():
-    global jogador, todos_sprites, inimigos, tiros, powerups, pontos, spawn_timer, game_over, boss_ocorreu, boss_grupo, tiros_boss
-    todos_sprites.empty()
+    global jogador, todos_sprites, inimigos, tiros, powerups
+    global pontos, spawn_timer, game_over, boss_ocorreu
+    global boss_grupo, tiros_boss, tempo_inicio, easter_ativo
     inimigos.empty()
     tiros.empty()
     powerups.empty()
     jogador = Jogador(LARGURA // 2, ALTURA - 60)
     todos_sprites.add(jogador)
-    pontos = 0
-    spawn_timer = 0
     game_over = False
     boss_ocorreu = 0
     boss_grupo.empty()
     tiros_boss.empty()
+    pontos = 0
+    spawn_timer = 0
+    tempo_inicio = pygame.time.get_ticks()
+    easter_ativo = False
+    boss_ocorreu = 0
+    game_over = False
 
 jogador = Jogador(LARGURA // 2, ALTURA - 60)
 todos_sprites.add(jogador)
@@ -108,6 +128,9 @@ velocidade_som = pygame.mixer.Sound("sons/powerspeed.mp3")
 
 pontos = 0
 spawn_timer = 0
+tempo_easter_egg = 60000
+tempo_sem_dano = pygame.time.get_ticks()
+easter_ativo = False
 
 rodando = True
 game_over = False
@@ -166,41 +189,65 @@ while rodando:
         continue
 
     if not game_over:
+        agora = pygame.time.get_ticks()
+
+        if not easter_ativo and agora - tempo_sem_dano >= tempo_easter_egg:
+            robo_dourado = RoboDourado(random.randint(100, LARGURA-100), -80)
+            todos_sprites.add(robo_dourado)
+            inimigos.add(robo_dourado)
+            easter_ativo = True
+
+        tempo_atual = pygame.time.get_ticks()
+        tempo_sobrevivido = (tempo_atual - tempo_inicio) // 1000
+
+        intervalo_spawn = SPAWN_INICIAL - (tempo_sobrevivido * 2)
+        if intervalo_spawn < SPAWN_MINIMO:
+            intervalo_spawn = SPAWN_MINIMO
+
         spawn_timer += 1
-        if spawn_timer > 80:
+
+        if spawn_timer >= intervalo_spawn:
+            spawn_timer = 0
+
             x = random.randint(40, LARGURA - 40)
             y = -40
+
             escolha = random.randint(1, 6)
             if escolha == 1:
                 robo = Robo(x, y)
-            if escolha == 2:
+            elif escolha == 2:
                 robo = RoboZigueZague(x, y)
-            if escolha == 3:
+            elif escolha == 3:
                 robo = RoboRapido(x, y)
-            if escolha == 4:
+            elif escolha == 4:
                 robo = RoboCiclico(x, y)
-            if escolha == 5:
+            elif escolha == 5:
                 robo = RoboSaltador(x, y)
-            if escolha == 6:
+            elif escolha == 6:
                 try:
                     robo = RoboCacador(x, y, jogador)
                 except Exception:
                     robo = Robo(x, y)
+
             todos_sprites.add(robo)
             inimigos.add(robo)
-            spawn_timer = 0
-            if pontos >= 20 and len(boss_grupo) == 0 and boss_ocorreu == 0:
-                boss = Boss(LARGURA // 2, 120, jogador, tiros_boss)
-                todos_sprites.add(boss)
-                boss_grupo.add(boss)
-                pygame.mixer.music.load("sons/musica_boss.mp3")
-                pygame.mixer.music.set_volume(0.25)
-                pygame.mixer.music.play(-1)
-                boss_ocorreu +=1
+
+        if pontos >= 100 and len(boss_grupo) == 0 and boss_ocorreu == 0:
+            boss = Boss(LARGURA // 2, 120, jogador, tiros_boss)
+            todos_sprites.add(boss)
+            boss_grupo.add(boss)
+            pygame.mixer.music.load("sons/musica_boss.mp3")
+            pygame.mixer.music.set_volume(0.25)
+            pygame.mixer.music.play(-1)
+            boss_ocorreu +=1
 
         colisoes = pygame.sprite.groupcollide(inimigos, tiros, True, True)
         for robo in colisoes:
             pontos += 1
+            if isinstance(robo, RoboDourado):
+                power = PowerUpApocalipse(robo.rect.centerx, robo.rect.centery)
+                todos_sprites.add(power)
+                powerups.add(power)
             try:
                 explosao = Explosao(robo.rect.centerx, robo.rect.centery)
                 todos_sprites.add(explosao)
@@ -226,6 +273,7 @@ while rodando:
             except Exception:
                 pass
             jogador.vida -= 1
+            tempo_sem_dano = pygame.time.get_ticks()
             if jogador.vida >= 1:
                 morteini_som.play()
             if jogador.vida <= 0:
@@ -254,6 +302,17 @@ while rodando:
             elif isinstance(p, PowerUpVidaExtra):
                 jogador.vida += 1
                 cura.play()
+            elif isinstance(p, PowerUpApocalipse):
+                efeito_apocalipse(TELA)
+
+                for sprite in inimigos:
+                    sprite.kill()
+
+                for boss in boss_grupo:
+                    boss.kill()
+
+                for tiro in tiros_boss:
+                    tiro.kill()
 
         colisao_boss = pygame.sprite.groupcollide(boss_grupo, tiros, False, True)
         for boss in colisao_boss:
@@ -268,6 +327,7 @@ while rodando:
         acertou = pygame.sprite.spritecollide(jogador, tiros_boss, True)
         for _ in acertou:
             jogador.vida -= 1
+            tempo_sem_dano = pygame.time.get_ticks()
             if jogador.vida <= 0:
                 if pontos > recorde:
                     recorde = pontos

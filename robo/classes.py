@@ -149,7 +149,7 @@ class RoboZigueZague(Robo):
         self.rect = self.image.get_rect(center=(x, y))
 
         self.direcao = 1
-        self.velocidade = 1.2
+        self.velocidade = 1.3
         self.vel_x = 5
 
     def atualizar_posicao(self):
@@ -180,7 +180,7 @@ class RoboCiclico(Robo):
         self.base_y = y
 
         self.raio = 150
-        self.vel_giro = 0.5
+        self.vel_giro = 0.6
        
         self.tabela_x = [0, 1, 2, 3, 2, 1, 0, -1, -2, -3, -2, -1]
         self.tabela_y = [-3, -2, -1, 0, 1, 2, 3, 2, 1, 0, -1, -2]
@@ -213,21 +213,21 @@ class RoboSaltador(Robo):
         self.rect = self.image.get_rect(center=(x, y))
 
         self.vel_y = 0
-        self.gravidade = 0.5
+        self.gravidade = 0.4
 
-        self.forca_pulo = -16
+        self.forca_pulo = -12
         self.chao = ALTURA - 40
         self.tempo_proximo_pulo = random.randint(60, 160)
 
      
         self.direcao = random.choice([-1, 1])
-        self.vel_x = 4
+        self.vel_x = 5
 
     def atualizar_posicao(self):
 
         self.vel_y += self.gravidade
-        if self.vel_y > 7:
-            self.vel_y = 7
+        if self.vel_y > 12:
+            self.vel_y = 12
 
         self.rect.y += self.vel_y
     
@@ -313,23 +313,29 @@ class PowerUpVidaExtra(PowerUp):
         self.image = pygame.transform.scale(self.image, (80,60))
         super().__init__(x, y)
 
+class PowerUpApocalipse(PowerUp):
+    def __init__(self, x, y):
+        self.image = pygame.image.load("img/apocalipse.png")
+        self.image = pygame.transform.scale(self.image, (80,60))
+        super().__init__(x, y)
+
 class Boss(pygame.sprite.Sprite):
     def __init__(self, x, y, jogador, grupo_tiros):
         super().__init__()
 
         self.image = pygame.image.load("img/boss.png").convert_alpha()
-        self.image = pygame.transform.scale(self.image, (180, 180))
+        self.image = pygame.transform.scale(self.image, (200, 200))
         self.rect = self.image.get_rect(center=(x, y))
 
         self.jogador = jogador
         self.grupo_tiros = grupo_tiros
 
-        self.vida_max = 100
-        self.vida = 100
+        self.vida_max = 300
+        self.vida = 300
 
         self.vel_x = 3
         self.tempo_ultimo_tiro = pygame.time.get_ticks()
-        self.intervalo_tiro = 1200 
+        self.intervalo_tiro = 1000
 
     def atirar(self):
         tiro = TiroBoss(self.rect.centerx, self.rect.centery, self.jogador)
@@ -360,7 +366,7 @@ class TiroBoss(pygame.sprite.Sprite):
     def __init__(self, x, y, alvo):
         super().__init__()
         self.image = pygame.image.load("img/tiro.png").convert_alpha()
-        self.image = pygame.transform.scale(self.image, (25, 25))
+        self.image = pygame.transform.scale(self.image, (30, 30))
         self.rect = self.image.get_rect(center=(x, y))
 
         dx = alvo.rect.centerx - x
@@ -376,4 +382,21 @@ class TiroBoss(pygame.sprite.Sprite):
 
         if (self.rect.top > ALTURA or self.rect.bottom < 0 or
             self.rect.left > LARGURA or self.rect.right < 0):
+            self.kill()
+
+class RoboDourado(Robo):
+    def __init__(self, x, y):
+        super().__init__(x, y)
+
+        self.image = pygame.Surface((60, 60))
+        self.image.fill((255, 215, 0))
+
+        self.rect = self.image.get_rect(center=(x, y))
+
+        self.velocidade = 3
+        self.vida = 3
+
+    def update(self):
+        self.rect.y += self.velocidade
+        if self.rect.top > ALTURA + 50:
             self.kill()
