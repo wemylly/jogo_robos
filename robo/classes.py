@@ -323,8 +323,8 @@ class Boss(pygame.sprite.Sprite):
     def __init__(self, x, y, jogador, grupo_tiros):
         super().__init__()
 
-        self.image = pygame.image.load("img/boss.png").convert_alpha()
-        self.image = pygame.transform.scale(self.image, (200, 200))
+        self.image = pygame.image.load("img/boss.webp").convert_alpha()
+        self.image = pygame.transform.scale(self.image, (400, 200))
         self.rect = self.image.get_rect(center=(x, y))
 
         self.jogador = jogador
