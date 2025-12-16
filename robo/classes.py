@@ -388,8 +388,8 @@ class RoboDourado(Robo):
     def __init__(self, x, y):
         super().__init__(x, y)
 
-        self.image = pygame.Surface((60, 60))
-        self.image.fill((255, 215, 0))
+        self.image = pygame.image.load("img/robo_amarelo.png").convert_alpha()
+        self.image = pygame.transform.scale(self.image, (80, 80))
 
         self.rect = self.image.get_rect(center=(x, y))
 

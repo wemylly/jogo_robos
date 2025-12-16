@@ -232,7 +232,7 @@ while rodando:
             todos_sprites.add(robo)
             inimigos.add(robo)
 
-        if pontos >= 100 and len(boss_grupo) == 0 and boss_ocorreu == 0:
+        if pontos >= 75 and len(boss_grupo) == 0 and boss_ocorreu == 0:
             boss = Boss(LARGURA // 2, 120, jogador, tiros_boss)
             todos_sprites.add(boss)
             boss_grupo.add(boss)
