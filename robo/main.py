@@ -110,6 +110,56 @@ def reset_jogo():
     boss_ocorreu = 0
     game_over = False
 
+def tela_derrota():
+    fonte_grande = pygame.font.SysFont(None, 64)
+    fonte_media = pygame.font.SysFont(None, 36)
+    fonte_pequena = pygame.font.SysFont(None, 28)
+    texto_morte = fonte_grande.render("VOCÊ MORREU", True, (255, 0, 0))
+    pontos_du_player = fonte_media.render(f"Sua pontuação: {pontos}", True, (255, 255, 255))
+    recorde_newbie = fonte_media.render(f"Maior pontuação: {recorde}", True, (255, 255, 255))
+    instrucoes = fonte_pequena.render("Pressione R para reiniciar", True, (255, 255, 255))
+
+    rect_morte = texto_morte.get_rect(center=(LARGURA // 2, ALTURA // 2 - 80))
+    rect_pontos = pontos_du_player.get_rect(center=(LARGURA // 2, ALTURA // 2 - 10))
+    rect_recorde = recorde_newbie.get_rect(center=(LARGURA // 2, ALTURA // 2 + 40))
+    rect_instr = instrucoes.get_rect(center=(LARGURA // 2, ALTURA // 2 + 100))
+
+    sombra = pygame.Surface((rect_morte.width + 20, rect_morte.height + 20), pygame.SRCALPHA)
+    sombra.fill((0, 0, 0, 150))
+    TELA.blit(sombra, (rect_morte.x - 10, rect_morte.y - 10))
+
+    TELA.blit(texto_morte, rect_morte)
+    TELA.blit(pontos_du_player, rect_pontos)
+    TELA.blit(recorde_newbie, rect_recorde)
+    TELA.blit(instrucoes, rect_instr)
+
+def tela_vitoria():
+    fonte_grande = pygame.font.SysFont(None, 64)
+    fonte_media = pygame.font.SysFont(None, 36)
+    fonte_pequena = pygame.font.SysFont(None, 28)
+    texto_morte = fonte_grande.render("VOCÊ VENCEU!", True, (255, 255, 0))
+    pontos_du_player = fonte_media.render(f"Sua pontuação: {pontos}", True, (255, 255, 255))
+    recorde_newbie = fonte_media.render(f"Maior pontuação: {recorde}", True, (255, 255, 255))
+    instrucao1 = fonte_pequena.render("Pressione R para reiniciar", True, (255, 255, 255))
+    instrucao2 = fonte_pequena.render("Pressione V para continuar", True, (255, 255, 255))
+
+    rect_morte = texto_morte.get_rect(center=(LARGURA // 2, ALTURA // 2 - 80))
+    rect_pontos = pontos_du_player.get_rect(center=(LARGURA // 2, ALTURA // 2 - 10))
+    rect_recorde = recorde_newbie.get_rect(center=(LARGURA // 2, ALTURA // 2 + 40))
+    rect_instr = instrucao1.get_rect(center=(LARGURA // 2, ALTURA // 2 + 100))
+    rect_instr2 = instrucao2.get_rect(center=(LARGURA // 2, ALTURA // 2 + 140))
+
+    sombra = pygame.Surface((rect_morte.width + 20, rect_morte.height + 20), pygame.SRCALPHA)
+    sombra.fill((0, 0, 0, 150))
+    TELA.blit(sombra, (rect_morte.x - 10, rect_morte.y - 10))
+
+    TELA.blit(texto_morte, rect_morte)
+    TELA.blit(pontos_du_player, rect_pontos)
+    TELA.blit(recorde_newbie, rect_recorde)
+    TELA.blit(instrucao1, rect_instr)
+    TELA.blit(instrucao2, rect_instr2)
+ 
+
 jogador = Jogador(LARGURA // 2, ALTURA - 60)
 todos_sprites.add(jogador)
 
@@ -126,7 +176,7 @@ cura = pygame.mixer.Sound("sons/powerheal.mp3")
 tirot = pygame.mixer.Sound("sons/powershoot.mp3")
 velocidade_som = pygame.mixer.Sound("sons/powerspeed.mp3")
 
-pontos = 0
+pontos = 100
 spawn_timer = 0
 tempo_easter_egg = 60000
 tempo_sem_dano = pygame.time.get_ticks()
@@ -134,6 +184,8 @@ easter_ativo = False
 
 rodando = True
 game_over = False
+game_victory = False
+continuar_jogo = False
 telaparada = None
 
 DURACAO_POWERUP_MS = 10000
@@ -155,10 +207,21 @@ while rodando:
                 pygame.mixer.music.load("sons/musica de fundo.mp3")
                 pygame.mixer.music.set_volume(0.5)
                 pygame.mixer.music.play(-1)
-            continue
+            
+        if game_victory:
+            if event.type == pygame.KEYDOWN:
+                pygame.mixer.music.set_volume(0)
+                if event.key == pygame.K_r:
+                    reset_jogo()
+                    pygame.mixer.init()
+                    pygame.mixer.music.load("sons/musica de fundo.mp3")
+                    pygame.mixer.music.set_volume(0.5)
+                    pygame.mixer.music.play(-1)
+                elif event.key == pygame.K_v:
+                    continuar_jogo = True
 
         if event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_ESCAPE and not pausado and not game_over:
+            if event.key == pygame.K_ESCAPE  and not pausado and not game_over:
                 pausado = True
             elif event.key == pygame.K_ESCAPE and pausado:
                 pausado = False
@@ -188,7 +251,7 @@ while rodando:
         pygame.display.flip()
         continue
 
-    if not game_over:
+    if not game_over and not game_victory:
         agora = pygame.time.get_ticks()
 
         if not easter_ativo and agora - tempo_sem_dano >= tempo_easter_egg:
@@ -241,6 +304,15 @@ while rodando:
             pygame.mixer.music.play(-1)
             boss_ocorreu +=1
 
+        if boss_ocorreu == 1 and len(boss_grupo) == 0:
+            game_victory = True
+            pygame.mixer.music.load("sons/vitoria.mp3")
+            pygame.mixer.music.set_volume(0.5)
+            pygame.mixer.music.play(0)
+            telaparada = TELA.copy()
+        elif game_victory and continuar_jogo:
+            game_victory = False
+                
         colisoes = pygame.sprite.groupcollide(inimigos, tiros, True, True)
         for robo in colisoes:
             pontos += 1
@@ -361,32 +433,18 @@ while rodando:
         TELA.blit(texto, (10, 10))
 
     else:
-        if telaparada:
-            TELA.blit(telaparada, (0, 0))
-        else:
-            TELA.blit(fundo, (0, 0))
-
-        fonte_grande = pygame.font.SysFont(None, 64)
-        fonte_media = pygame.font.SysFont(None, 36)
-        fonte_pequena = pygame.font.SysFont(None, 28)
-        texto_morte = fonte_grande.render("VOCÊ MORREU", True, (255, 0, 0))
-        pontos_du_player = fonte_media.render(f"Sua pontuação: {pontos}", True, (255, 255, 255))
-        recorde_newbie = fonte_media.render(f"Maior pontuação: {recorde}", True, (255, 255, 255))
-        instrucoes = fonte_pequena.render("Pressione R para reiniciar", True, (255, 255, 255))
-
-        rect_morte = texto_morte.get_rect(center=(LARGURA // 2, ALTURA // 2 - 80))
-        rect_pontos = pontos_du_player.get_rect(center=(LARGURA // 2, ALTURA // 2 - 10))
-        rect_recorde = recorde_newbie.get_rect(center=(LARGURA // 2, ALTURA // 2 + 40))
-        rect_instr = instrucoes.get_rect(center=(LARGURA // 2, ALTURA // 2 + 100))
-
-        sombra = pygame.Surface((rect_morte.width + 20, rect_morte.height + 20), pygame.SRCALPHA)
-        sombra.fill((0, 0, 0, 150))
-        TELA.blit(sombra, (rect_morte.x - 10, rect_morte.y - 10))
-
-        TELA.blit(texto_morte, rect_morte)
-        TELA.blit(pontos_du_player, rect_pontos)
-        TELA.blit(recorde_newbie, rect_recorde)
-        TELA.blit(instrucoes, rect_instr)
+        if game_over:
+            if telaparada:
+                TELA.blit(telaparada, (0, 0))
+            else:
+                TELA.blit(fundo, (0, 0))
+            tela_derrota()
+        elif game_victory:
+            if telaparada:
+                TELA.blit(telaparada, (0, 0))
+            else:
+                TELA.blit(fundo, (0, 0))
+            tela_vitoria()
 
     pygame.display.flip()
 
