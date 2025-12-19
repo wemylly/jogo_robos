@@ -91,24 +91,28 @@ def tela_pause(tela, largura, altura, recorde, pontos):
     tela.blit(texto_info, rect_info)
 
 def reset_jogo():
-    global jogador, todos_sprites, inimigos, tiros, powerups
-    global pontos, spawn_timer, game_over, boss_ocorreu
-    global boss_grupo, tiros_boss, tempo_inicio, easter_ativo
+    global jogador, pontos, spawn_timer, game_over, boss_ocorreu
+    global tempo_inicio, easter_ativo, game_victory, continuar_jogo
+    global todos_sprites, inimigos, tiros, powerups, boss_grupo, tiros_boss
+
+    todos_sprites.empty()
     inimigos.empty()
     tiros.empty()
     powerups.empty()
-    jogador = Jogador(LARGURA // 2, ALTURA - 60)
-    todos_sprites.add(jogador)
-    game_over = False
-    boss_ocorreu = 0
     boss_grupo.empty()
     tiros_boss.empty()
+
+    jogador = Jogador(LARGURA // 2, ALTURA - 60)
+    todos_sprites.add(jogador)
+
     pontos = 0
     spawn_timer = 0
-    tempo_inicio = pygame.time.get_ticks()
-    easter_ativo = False
     boss_ocorreu = 0
     game_over = False
+    game_victory = False
+    continuar_jogo = False
+    easter_ativo = False
+    tempo_inicio = pygame.time.get_ticks()
 
 def tela_derrota():
     fonte_grande = pygame.font.SysFont(None, 64)
@@ -176,7 +180,7 @@ cura = pygame.mixer.Sound("sons/powerheal.mp3")
 tirot = pygame.mixer.Sound("sons/powershoot.mp3")
 velocidade_som = pygame.mixer.Sound("sons/powerspeed.mp3")
 
-pontos = 100
+pontos = 0
 spawn_timer = 0
 tempo_easter_egg = 60000
 tempo_sem_dano = pygame.time.get_ticks()
@@ -210,15 +214,23 @@ while rodando:
             
         if game_victory:
             if event.type == pygame.KEYDOWN:
-                pygame.mixer.music.set_volume(0)
+                
                 if event.key == pygame.K_r:
                     reset_jogo()
-                    pygame.mixer.init()
+                    game_victory = False
+                    continuar_jogo = False
+
                     pygame.mixer.music.load("sons/musica de fundo.mp3")
-                    pygame.mixer.music.set_volume(0.5)
+                    pygame.mixer.music.set_volume(0.35)
                     pygame.mixer.music.play(-1)
+
                 elif event.key == pygame.K_v:
+                    game_victory = False
                     continuar_jogo = True
+
+                    pygame.mixer.music.load("sons/musica de fundo.mp3")
+                    pygame.mixer.music.set_volume(0.35)
+                    pygame.mixer.music.play(-1)
 
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_ESCAPE  and not pausado and not game_over:
@@ -251,6 +263,16 @@ while rodando:
         pygame.display.flip()
         continue
 
+    if game_victory:
+        if telaparada:
+            TELA.blit(telaparada, (0, 0))
+        else:
+            TELA.blit(fundo, (0, 0))
+
+        tela_vitoria()
+        pygame.display.flip()
+        continue
+
     if not game_over and not game_victory:
         agora = pygame.time.get_ticks()
 
@@ -269,7 +291,7 @@ while rodando:
 
         spawn_timer += 1
 
-        if spawn_timer >= intervalo_spawn:
+        if spawn_timer >= intervalo_spawn and len(boss_grupo) == 0:
             spawn_timer = 0
 
             x = random.randint(40, LARGURA - 40)
@@ -296,20 +318,23 @@ while rodando:
             inimigos.add(robo)
 
         if pontos >= 75 and len(boss_grupo) == 0 and boss_ocorreu == 0:
+            for inimigo in inimigos:
+                inimigo.kill()
+
             boss = Boss(LARGURA // 2, 120, jogador, tiros_boss)
             todos_sprites.add(boss)
             boss_grupo.add(boss)
-            pygame.mixer.music.load("sons/musica_boss.mp3")
-            pygame.mixer.music.set_volume(0.25)
-            pygame.mixer.music.play(-1)
-            boss_ocorreu +=1
+            boss_ocorreu = 1
 
         if boss_ocorreu == 1 and len(boss_grupo) == 0:
             game_victory = True
+            continuar_jogo = False
+            boss_ocorreu = 2
+            telaparada = TELA.copy()
+
             pygame.mixer.music.load("sons/vitoria.mp3")
             pygame.mixer.music.set_volume(0.5)
             pygame.mixer.music.play(0)
-            telaparada = TELA.copy()
         elif game_victory and continuar_jogo:
             game_victory = False
                 
@@ -396,7 +421,7 @@ while rodando:
                 pygame.mixer.music.set_volume(0.35)
                 pygame.mixer.music.play(-1)
 
-        acertou = pygame.sprite.spritecollide(jogador, tiros_boss, True)
+        acertou = pygame.sprite.spritecollide(jogador,tiros_boss,True,collided=lambda a, b: a.rect.colliderect(b.hitbox))
         for _ in acertou:
             jogador.vida -= 1
             tempo_sem_dano = pygame.time.get_ticks()

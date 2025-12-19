@@ -2,6 +2,8 @@ import pygame
 import random
 from typing import List
 import os
+import math
+
 LARGURA = 1020
 ALTURA = 600
 
@@ -42,8 +44,8 @@ class Jogador(Entidade):
         jogador1 = pygame.image.load("img/player.png").convert_alpha()
         jogador2 = pygame.image.load("img/player2.png").convert_alpha()
 
-        jogador1 = pygame.transform.scale(jogador1, (100,100))  
-        jogador2 = pygame.transform.scale(jogador2, (100,100))
+        jogador1 = pygame.transform.scale(jogador1, (90, 90))
+        jogador2 = pygame.transform.scale(jogador2, (90, 90))
 
         self.sprites.append(jogador1)
         self.sprites.append(jogador2)
@@ -52,29 +54,45 @@ class Jogador(Entidade):
 
         self.image = self.sprites[0]
         self.rect = self.image.get_rect(center=(x, y))
+
+        self.hitbox = self.rect.inflate(-70, -70)
+
         self.vida = 5
 
     def update(self):
         self.frame += 0.1
         if self.frame >= len(self.sprites):
             self.frame = 0
-
         self.image = self.sprites[int(self.frame)]
 
         keys = pygame.key.get_pressed()
 
-        if keys[pygame.K_w]:
-            self.mover(0, -self.velocidade)
-        if keys[pygame.K_s]:
-            self.mover(0, self.velocidade)
-        if keys[pygame.K_a]:
-            self.mover(-self.velocidade, 0)
-        if keys[pygame.K_d]:
-            self.mover(self.velocidade, 0)
+        dx = dy = 0
 
-        # limites de tela
+        if keys[pygame.K_w]:
+            dy -= self.velocidade
+        if keys[pygame.K_s]:
+            dy += self.velocidade
+        if keys[pygame.K_a]:
+            dx -= self.velocidade
+        if keys[pygame.K_d]:
+            dx += self.velocidade
+
+        if keys[pygame.K_UP]:
+            dy -= self.velocidade
+        if keys[pygame.K_DOWN]:
+            dy += self.velocidade
+        if keys[pygame.K_LEFT]:
+            dx -= self.velocidade
+        if keys[pygame.K_RIGHT]:
+            dx += self.velocidade
+
+        self.mover(dx, dy)
+
         self.rect.x = max(0, min(self.rect.x, LARGURA - 95))
         self.rect.y = max(0, min(self.rect.y, ALTURA - 95))
+
+        self.hitbox.center = self.rect.center
 
 class Explosao(pygame.sprite.Sprite):
     def __init__(self, x, y):
@@ -83,7 +101,6 @@ class Explosao(pygame.sprite.Sprite):
         self.frame = 0
         self.image = self.frames[self.frame]
 
-        # salva o centro fixo
         self.center = (x, y)
         self.rect = self.image.get_rect(center=self.center)
 
@@ -105,7 +122,7 @@ class Tiro(Entidade):
     def __init__(self, x, y):
         super().__init__(x, y, 10)
         self.image = pygame.image.load("img/tiro.png")
-        self.image = pygame.transform.scale(self.image, (40, 40))
+        self.image = pygame.transform.scale(self.image, (35, 35))
         self.rect = self.image.get_rect(center=(x, y))
       
         self.vel_x = 0
@@ -330,17 +347,93 @@ class Boss(pygame.sprite.Sprite):
         self.jogador = jogador
         self.grupo_tiros = grupo_tiros
 
-        self.vida_max = 300
-        self.vida = 300
+        self.vida_max = 250
+        self.vida = 250
 
-        self.vel_x = 3
+        self.vel_x = 4
+
         self.tempo_ultimo_tiro = pygame.time.get_ticks()
         self.intervalo_tiro = 1000
 
-    def atirar(self):
-        tiro = TiroBoss(self.rect.centerx, self.rect.centery, self.jogador)
+        self.padroes = [
+            self.tiro_simples,
+            self.tiro_triplo,
+            self.circulo_tiros,
+            self.leque
+        ]
+
+        self.padrao_atual = random.choice(self.padroes)
+        self.tempo_troca_padrao = pygame.time.get_ticks()
+        self.intervalo_troca = 1500
+
+    # ataque 1
+    def tiro_simples(self):
+        dx = self.jogador.rect.centerx - self.rect.centerx
+        dy = self.jogador.rect.centery - self.rect.centery
+        dist = max(1, math.hypot(dx, dy))
+        vel = 4
+
+        tiro = TiroBoss(
+            self.rect.centerx,
+            self.rect.centery,
+            (dx / dist) * vel,
+            (dy / dist) * vel
+        )
         self.grupo_tiros.add(tiro)
-        tiro_boss_som.play()
+
+    # ataque 2
+    def tiro_triplo(self):
+        vel = 4
+        for ang in (-15, 0, 15):
+            rad = math.radians(ang)
+            vx = math.sin(rad) * vel
+            vy = math.cos(rad) * vel
+
+            tiro = TiroBoss(
+                self.rect.centerx,
+                self.rect.centery,
+                vx,
+                vy
+            )
+            self.grupo_tiros.add(tiro)
+
+    # ataque 3
+    def circulo_tiros(self):
+        qtd = 16
+        vel = 4
+
+        for i in range(qtd):
+            ang = (2 * math.pi / qtd) * i
+            vx = math.cos(ang) * vel
+            vy = math.sin(ang) * vel
+
+            tiro = TiroBoss(
+                self.rect.centerx,
+                self.rect.centery,
+                vx,
+                vy
+            )
+            self.grupo_tiros.add(tiro)
+
+    # ataque 4
+    def leque(self):
+        dx = self.jogador.rect.centerx - self.rect.centerx
+        dy = self.jogador.rect.centery - self.rect.centery
+        base = math.atan2(dy, dx)
+
+        vel = 4
+        for ang in (-30, -15, 0, 15, 30):
+            a = base + math.radians(ang)
+            vx = math.cos(a) * vel
+            vy = math.sin(a) * vel
+
+            tiro = TiroBoss(
+                self.rect.centerx,
+                self.rect.centery,
+                vx,
+                vy
+            )
+            self.grupo_tiros.add(tiro)
 
     def update(self):
         self.rect.x += self.vel_x
@@ -348,8 +441,13 @@ class Boss(pygame.sprite.Sprite):
             self.vel_x *= -1
 
         agora = pygame.time.get_ticks()
+
+        if agora - self.tempo_troca_padrao > self.intervalo_troca:
+            self.padrao_atual = random.choice(self.padroes)
+            self.tempo_troca_padrao = agora
+
         if agora - self.tempo_ultimo_tiro > self.intervalo_tiro:
-            self.atirar()
+            self.padrao_atual()
             self.tempo_ultimo_tiro = agora
 
     def desenhar_barra_vida(self, tela):
@@ -363,22 +461,22 @@ class Boss(pygame.sprite.Sprite):
         pygame.draw.rect(tela, (0, 255, 0), (x, y, largura * proporcao, altura))
 
 class TiroBoss(pygame.sprite.Sprite):
-    def __init__(self, x, y, alvo):
+    def __init__(self, x, y, vel_x, vel_y):
         super().__init__()
-        self.image = pygame.image.load("img/tiro.png").convert_alpha()
-        self.image = pygame.transform.scale(self.image, (30, 30))
+        self.image = pygame.image.load("img/tiroboss.png").convert_alpha()
+        self.image = pygame.transform.scale(self.image, (80, 80))
         self.rect = self.image.get_rect(center=(x, y))
 
-        dx = alvo.rect.centerx - x
-        dy = alvo.rect.centery - y
-        distancia = max(1, (dx**2 + dy**2) ** 0.5)
-
-        self.vel_x = (dx / distancia) * 6
-        self.vel_y = (dy / distancia) * 6
+        self.vel_x = vel_x
+        self.vel_y = vel_y
+        self.rect = self.image.get_rect(center=(x, y))
+        self.hitbox = self.rect.inflate(-70, -70)
 
     def update(self):
         self.rect.x += self.vel_x
         self.rect.y += self.vel_y
+
+        self.hitbox.center = self.rect.center
 
         if (self.rect.top > ALTURA or self.rect.bottom < 0 or
             self.rect.left > LARGURA or self.rect.right < 0):
