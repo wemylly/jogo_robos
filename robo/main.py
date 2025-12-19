@@ -182,7 +182,7 @@ velocidade_som = pygame.mixer.Sound("sons/powerspeed.mp3")
 
 pontos = 0
 spawn_timer = 0
-tempo_easter_egg = 60000
+tempo_easter_egg = 30000
 tempo_sem_dano = pygame.time.get_ticks()
 easter_ativo = False
 
